@@ -471,7 +471,7 @@ Throws an error and exits with code 1 if something&#x27;s not right in your gard
 
     garden validate 
 
-### garden new
+### garden new project
 
 Creates scaffolding for a new Garden project..
 
@@ -480,16 +480,15 @@ input.
 
 Examples:
 
-    garden new # scaffolds a new Garden project in the current directory (project name defaults to directory name)
-    garden new my-project # scaffolds a new Garden project named my-project in the current directory
-    garden new my-project --module-dirs&#x3D;. # scaffolds a new Garden project and looks for modules
-    in the current directory
-    garden new my-existing-project --module-dirs&#x3D;services # scaffolds a new Garden project and looks for modules
-    in the services directory
+    garden new project # scaffolds a new Garden project in the current directory (project name defaults to
+    directory name)
+    garden new project my-project # scaffolds a new Garden project named my-project in the current directory
+    garden new project my-existing-project --module-dirs&#x3D;services # scaffolds a new Garden project and
+    looks for modules in the services directory
 
 ##### Usage
 
-    garden new [projectName] [options]
+    garden new project [projectName] [options]
 
 ##### Arguments
 
@@ -501,5 +500,35 @@ Examples:
 
 | Argument | Alias | Type | Description |
 | -------- | ----- | ---- | ----------- |
-  | `--module-dirs` |  | string | Directory of module(s)
+  | `--module-dirs` |  | string | Relative path to modules directory (if any). Use comma as a separator to specify multiple directories
+  | `--from-scratch` |  | boolean | If true, creates a new directory. Otherwise assumes current working directory is the project directory
+
+### garden new module
+
+Creates scaffolding for a new Garden project..
+
+The New command walks the user through setting up a new Garden project and generates scaffolding based on user
+input.
+
+Examples:
+
+    garden new module # scaffolds a new module in the current directory (module name defaults to directory name)
+    garden new module my-module # scaffolds a new module named my-module in the current directory
+
+##### Usage
+
+    garden new module [moduleName] [options]
+
+##### Arguments
+
+| Argument | Required | Description |
+| -------- | -------- | ----------- |
+  | `moduleName` | No | The name of the module, (defaults to current directory name)
+
+##### Options
+
+| Argument | Alias | Type | Description |
+| -------- | ----- | ---- | ----------- |
+  | `--from-scratch` |  | boolean | If true, creates a new directory. Otherwise assumes current working directory is the project directory
+  | `--type` |  | string | Type of module to help. Check out &#x27;https://docs.garden.io&#x27; for available types
 
