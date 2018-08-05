@@ -1,15 +1,45 @@
+import logging
 from flask import Flask, render_template, request, make_response, g
 from redis import Redis
 import os
 import socket
 import random
 import json
+import opentracing
+from flask_opentracing import FlaskTracer
+
+
+from jaeger_client import Config
+
+log_level = logging.DEBUG
+logging.getLogger('').handlers = []
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+
+config = Config(
+    config={ # usually read from some yaml config
+        'local_agent': {
+          'reporting_host': 'jaeger'
+        },
+        'sampler': {
+            'type': 'const',
+            'param': 1,
+        },
+        'logging': True,
+    },
+    service_name='vote',
+    validate=True,
+)
+
+
 
 option_a = os.getenv('OPTION_A', "Cats")
 option_b = os.getenv('OPTION_B', "Dogs")
 hostname = socket.gethostname()
 
 app = Flask(__name__)
+# this call also sets opentracing.tracer
+tracer = config.initialize_tracer()
+tracer = FlaskTracer(tracer, True, app)
 
 def get_redis():
     if not hasattr(g, 'redis'):
@@ -17,7 +47,8 @@ def get_redis():
     return g.redis
 
 @app.route("/vote/", methods=['POST','GET'])
-def hello():
+@tracer.trace()
+def vote():
     voter_id = request.cookies.get('voter_id')
     print("hello")
     if not voter_id:

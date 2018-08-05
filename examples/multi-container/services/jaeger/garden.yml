@@ -1,0 +1,33 @@
+module:
+  description: jaeger service
+  type: container
+  image: jaegertracing/all-in-one:latest
+  services:
+    - name: jaeger
+      endpoints:
+        - paths: [/]
+          port: ui
+      env:
+        COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+      ports:
+        - name: a
+          protocol: UDP
+          containerPort: 6832
+        - name: b
+          protocol: TCP
+          containerPort: 5778
+        - name: ui
+          protocol: TCP
+          containerPort: 16686
+        - name: d
+          protocol: TCP
+          containerPort: 14268
+        - name: e
+          protocol: TCP
+          containerPort: 9411
+        - name: f
+          protocol: UDP
+          containerPort: 6831
+        - name: g
+          protocol: UDP
+          containerPort: 5775
