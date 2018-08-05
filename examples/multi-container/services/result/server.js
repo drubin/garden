@@ -6,7 +6,35 @@ var express = require('express'),
     methodOverride = require('method-override'),
     app = express(),
     server = require('http').Server(app),
-    io = require('socket.io')(server);
+    io = require('socket.io')(server),
+    middleware = require('express-opentracing').default,
+    initTracer = require('jaeger-client').initTracer;
+
+console.log(middleware);
+
+var config = {
+  'reporter': {
+    'agentHost': 'jaeger',
+    'logSpans': true
+  },
+  'sampler': {
+    'type': "const",
+    'param': 1,
+    'agentHost': 'jaeger',
+  },
+  'serviceName': 'result'
+};
+var options = {
+  logger: {
+    info: function logInfo(msg) {
+      console.log("INFO ", msg);
+    },
+    error: function logError(msg) {
+      console.log("ERROR", msg);
+    },
+  },
+};
+var tracer = initTracer(config, options);
 
 io.set('transports', ['polling']);
 
@@ -63,6 +91,14 @@ function collectVotesFromResult(result) {
   return votes;
 }
 
+app.use((req, res, next) => {
+  // exclude paths that start with '/css' or '/js'
+  if (req.path.endsWith(".js") || req.path.endsWith('.css')) {
+    return next()
+  }
+  // trace calls
+  middleware({tracer: tracer})(req, res, next);
+});
 app.use(cookieParser());
 app.use(bodyParser());
 app.use(methodOverride('X-HTTP-Method-Override'));
