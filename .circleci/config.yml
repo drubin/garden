@@ -48,7 +48,7 @@ jobs:
                 fi
             done
       - store_artifacts:
-          path: build/*
+          path: garden-cli/build
 
 
 #   build:
