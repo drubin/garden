@@ -49,6 +49,7 @@ jobs:
             done
       - store_artifacts:
           path: garden-cli/build
+          destination: /downloads
   test-node:
     docker:
       - image: circleci/node:10
