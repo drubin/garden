@@ -54,7 +54,8 @@
     "preversion": "npm test",
     "release": "./bin/publish",
     "release-canary": "./bin/publish-canary",
-    "test": "npm run lint && npm run clean && gulp test"
+    "test": "npm run lint && npm run clean && gulp test",
+    "ci-build": "npm run clean && gulp garden-service:build"
   },
   "husky": {
     "hooks": {

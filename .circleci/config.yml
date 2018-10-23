@@ -82,8 +82,8 @@ jobs:
 
       # build, lint and run tests
       - run:
-          name: gulp garden-service:build
-          command: node_modules/.bin/gulp garden-service:build
+          name: ci-build
+          command: npm run ci-build
       - run:
           name: npm run lint
           command: npm run lint
