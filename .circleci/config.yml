@@ -82,8 +82,8 @@ jobs:
 
       # build, lint and run tests
       - run:
-          name: npm build
-          command: npm run build
+          name: gulp garden-service:build
+          command: gulp garden-service:build
       - run:
           name: npm run lint
           command: npm run lint
