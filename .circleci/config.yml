@@ -25,11 +25,10 @@ jobs:
           key: pkg-cache-{{ checksum "Gopkg.lock" }}
           paths:
             - "/go/src/github.com/garden-io/garden/vendor"
-      - run: cd garden-cli
-
       - run:
           name: Build darwin/amd64
           command: |
+            cd garden-cli
             package_name="garden"
             platforms=("windows/amd64" "windows/386" "darwin/amd64")
             for platform in "${platforms[@]}"
