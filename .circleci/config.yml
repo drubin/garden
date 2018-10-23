@@ -4,54 +4,77 @@
 #
 version: 2
 jobs:
-  build:
+  build-go:
     docker:
-      # specify the version you desire here
-      - image: circleci/node:10
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/mongo:3.4.4
-
-    working_directory: ~/repo
-
+      - image: circleci/golang:1.10
+    working_directory: /go/src/github.com/garden-io/garden
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - pkg-cache-{{ checksum "Gopkg.lock" }}
+      - run:
+          name: Install dep
+          command: |
+            if [ ! -d /go/src/github.com/your_company/your_app/vendor ]; then
+                curl -L -s https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -o /go/bin/dep
+                chmod +x /go/bin/dep
+                /go/bin/dep ensure
+            fi
+      - save_cache:
+          key: pkg-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - "/go/src/github.com/garden-io/garden/vendor"
+      - run:
+          name: Build All
+          command: |
+            cd garden-cli
+            package_name="garden"
+            platforms=("windows/amd64" "windows/386" "darwin/amd64" "linux/amd64")
+            for platform in "${platforms[@]}"
+            do
+                platform_split=(${platform//\// })
+                GOOS=${platform_split[0]}
+                GOARCH=${platform_split[1]}
+                output_name=$package_name'-'$GOOS'-'$GOARCH
+                if [ $GOOS = "windows" ]; then
+                    output_name+='.exe'
+                fi
 
+                env GOOS=$GOOS GOARCH=$GOARCH go build -o build/$output_name
+                if [ $? -ne 0 ]; then
+                    echo 'An error has occurred! Aborting the script execution...'
+                    exit 1
+                fi
+            done
+      - store_artifacts:
+          path: garden-cli/build
+          destination: /downloads
+  test-node:
+    docker:
+      - image: circleci/node:10
+    steps:
+      - checkout
+      - run: sudo apt-get update && sudo apt-get install rsync
       - setup_remote_docker:
           docker_layer_caching: true
-
-      - run:
-          name: Install apt dependencies
-          command: sudo apt install rsync cmake libicu-dev pkg-config
-
-      - run:
-          name: Install kubectl
-          command: |
-            curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.10.0/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v3-dependencies-{{ checksum "package-lock.json" }}
-
-      # install using package-lock only
+          - root-{{ checksum "package-lock.json" }}
+      - restore_cache:
+          keys:
+          - garden-service-{{ checksum "garden-service/package-lock.json" }}
+      # Install npm deps
       - run: npm ci
       - run: node_modules/.bin/lerna bootstrap --ci
 
       - save_cache:
-          paths:
-            - node_modules
-            - garden-service/node_modules
-          key: v3-dependencies-{{ checksum "package-lock.json" }}
-
-      # a couple of special cases needed just for local builds
-      - run: |
-          if [[ $CIRCLE_SHELL_ENV == *"localbuild"* ]]; then
-            sudo chown $(whoami): /var/run/docker.sock
-            npm rebuild
-          fi
+          paths: [node_modules]
+          key: root-{{ checksum "package-lock.json" }}
+      - save_cache:
+          paths: [garden-service/node_modules]
+          key: garden-service-{{ checksum "garden-service/package-lock.json" }}
 
       - run:
           name: Make sure generated docs are up-to-date
@@ -60,9 +83,87 @@ jobs:
             npm run check-docs
 
       # build, lint and run tests
-      - run: npm run build
-      - run: npm run lint
-      - run: npm test
+      - run:
+          name: ci-build
+          command: npm run ci-build
+      - run:
+          name: npm run lint
+          command: npm run lint
+      - run:
+          name: npm test
+          command: npm test
+
+#   build:
+#     docker:
+#       - image: circleci/node:10
+#         environment:
+#           GOPATH: /home/circleci/go
+
+#     working_directory: ~/go/src/github.com/garden-io/garden
+
+#     steps:
+#       - checkout
+
+#       - setup_remote_docker:
+#           docker_layer_caching: true
+
+#       - run: export
+
+#       - run:
+#           name: Install apt dependencies
+#           command: |
+#             sudo add-apt-repository ppa:gophers/archive
+#             sudo apt-get update
+#             sudo apt install rsync cmake libicu-dev pkg-config golang-1.11-go
+
+#       - run:
+#           name: Install kubectl
+#           command: |
+#             curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.10.0/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+#       - run:
+#           name: Install dep
+#           command: |
+#             mkdir -p $GOPATH/bin
+#             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
+
+#       - restore_cache:
+#           keys:
+#           - v0-go-deps-{{ checksum "Gopkg.lock" }}
+
+#       # install dependencies
+#       - run: npm ci
+#       - run: node_modules/.bin/lerna bootstrap --ci
+#       - run: $GOPATH/bin/dep ensure
+
+#       - save_cache:
+#           paths: [node_modules]
+#           key: v0-npm-deps-{{ checksum "package-lock.json" }}
+#       - save_cache:
+#           paths: [garden-service/node_modules]
+#           key: v0-garden-service-deps-{{ checksum "garden-service/package-lock.json" }}
+#       - save_cache:
+#           paths: [vendor]
+#           key: v0-go-deps-{{ checksum "Gopkg.lock" }}
+
+#       # a couple of special cases needed just for local builds
+#       - run: |
+#           if [[ $CIRCLE_SHELL_ENV == *"localbuild"* ]]; then
+#             sudo chown $(whoami): /var/run/docker.sock
+#             npm rebuild
+#           fi
+
+#       - run:
+#           name: Make sure generated docs are up-to-date
+#           command: |
+#             npm run generate-docs
+#             npm run check-docs
+
+#       # build, lint and run tests
+#       - run: npm run build
+#       - run: npm run lint
+#       - run: npm test
 
 #  minikube-tests:
 #    # got this from https://github.com/gavinzhou/ci-minikube/blob/master/.circleci/config.yml
@@ -108,9 +209,11 @@ jobs:
 #            source $BASH_ENV
 #            ./bin/integ
 #
-#workflows:
-#  version: 2
-#  all-tests:
-#    jobs:
-#      - unit-tests
-#      - minikube-tests
+workflows:
+ version: 2
+ all-tests:
+   jobs:
+     - build-go
+     - test-node
+    #  - unit-tests
+    #  - minikube-tests
