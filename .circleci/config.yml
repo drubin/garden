@@ -26,11 +26,11 @@ jobs:
           paths:
             - "/go/src/github.com/garden-io/garden/vendor"
       - run:
-          name: Build darwin/amd64
+          name: Build All
           command: |
             cd garden-cli
             package_name="garden"
-            platforms=("windows/amd64" "windows/386" "darwin/amd64")
+            platforms=("windows/amd64" "windows/386" "darwin/amd64" "linux/amd64")
             for platform in "${platforms[@]}"
             do
                 platform_split=(${platform//\// })
