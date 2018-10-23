@@ -54,7 +54,7 @@ jobs:
       - image: circleci/node:10
     steps:
       - checkout
-      - run: sudo apt-get update & apt-get install rsync
+      - run: sudo apt-get update && sudo apt-get install rsync
       - setup_remote_docker:
           docker_layer_caching: true
       # Download and cache dependencies
