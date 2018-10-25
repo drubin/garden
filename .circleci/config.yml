@@ -91,6 +91,22 @@ jobs:
       - run:
           name: npm test
           command: npm run ci-test
+  publish-latest:
+    docker:
+      - image: 18.06.1-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - name: Docker login
+        command: |
+          docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - name: Build and publish docker-sync
+        command: |
+          docker build -t drubin/garden-sync:latest garden-sync
+          docker build -t drubin/garden-service:latest garden-service
+          docker push drubin/garden-sync:latest
+          docker push drubin/garden-service:latest
 
 workflows:
  version: 2
@@ -98,3 +114,8 @@ workflows:
    jobs:
      - build-go
      - test-node
+  publish-latest:
+    filters:
+      branches:
+        only:
+          - master
