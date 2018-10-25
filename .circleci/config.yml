@@ -115,8 +115,9 @@ workflows:
       - build-go
       - test-node
   publish-latest:
-    jobs: [publish-latest]
-    filters:
-      branches:
-        only:
-          - master
+    jobs:
+      - publish-latest:
+          filters:
+            branches:
+              only:
+                - master
