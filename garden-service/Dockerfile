@@ -1,8 +1,7 @@
 FROM node:10.11.0-alpine
 
 # The current implementation of Garden expects the Helm and OpenFaas binaries at these specific paths.
-
-ARG HELM_PATH=/root/.garden/tools/helm/02a4751586d6a80f/
+ARG HELM_PATH=/root/.garden/tools/helm/d97d3f6f94fc7a04/
 ARG FAASCLI_PATH=/root/.garden/tools/faas-cli/826489a1731741fd/
 
 # system dependencies
