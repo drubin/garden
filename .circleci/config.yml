@@ -39,6 +39,7 @@ jobs:
       - restore_cache:
           keys:
             - pkg-cache-{{ checksum "Gopkg.lock" }}
+      - run: go get -u github.com/jstemmer/go-junit-report
       - run:
           name: Install dep
           command: |
@@ -51,7 +52,9 @@ jobs:
           key: pkg-cache-{{ checksum "Gopkg.lock" }}
           paths:
             - "/go/src/github.com/garden-io/garden/vendor"
-      - run: cd garden-cli && go test -v
+      - run: cd garden-cli && go test -v 2>&1 | go-junit-report > /tmp/report.xml
+      - store_test_results: # Upload test results for display in Test Summary
+          path: /tmp/report.xml
   test-service:
     docker:
       - image: circleci/node:10
