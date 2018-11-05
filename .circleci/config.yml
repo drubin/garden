@@ -5,17 +5,18 @@
 version: 2
 
 ## Configuration here can be shared across jobs
-references:
+.references:
   go-config: &go-config
     docker:
       - image: circleci/golang:1.10
     working_directory: /go/src/github.com/garden-io/garden
   go-builder: &go-builder
-    - checkout
-    - restore_cache:
+    steps:
+      - checkout
+      - restore_cache:
         keys:
           - pkg-cache-{{ checksum "Gopkg.lock" }}
-    - run:
+      - run:
         name: Install dep
         command: |
           if [ ! -d /go/src/github.com/garden-io/garden/vendor ]; then
@@ -23,19 +24,34 @@ references:
               chmod +x /go/bin/dep
               /go/bin/dep ensure
           fi
-    - save_cache:
+      - save_cache:
         key: pkg-cache-{{ checksum "Gopkg.lock" }}
         paths:
           - "/go/src/github.com/garden-io/garden/vendor"
-    - run: cd garden-cli
+      - run: cd garden-cli
 
 # Jobs definitions
 jobs:
   test-cli:
     <<: *go-config
     steps:
-      - *go-builder
-      - go test -v
+      - checkout
+      - restore_cache:
+          keys:
+            - pkg-cache-{{ checksum "Gopkg.lock" }}
+      - run:
+          name: Install dep
+          command: |
+            if [ ! -d /go/src/github.com/garden-io/garden/vendor ]; then
+                curl -L -s https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -o /go/bin/dep
+                chmod +x /go/bin/dep
+                /go/bin/dep ensure
+            fi
+      - save_cache:
+          key: pkg-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - "/go/src/github.com/garden-io/garden/vendor"
+      - run: cd garden-cli && go test -v
   test-service:
     docker:
       - image: circleci/node:10
@@ -83,7 +99,22 @@ jobs:
   build-cli:
     <<: *go-config
     steps:
-      - *go-builder
+      - checkout
+      - restore_cache:
+        keys:
+          - pkg-cache-{{ checksum "Gopkg.lock" }}
+      - run:
+        name: Install dep
+        command: |
+          if [ ! -d /go/src/github.com/garden-io/garden/vendor ]; then
+              curl -L -s https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -o /go/bin/dep
+              chmod +x /go/bin/dep
+              /go/bin/dep ensure
+          fi
+      - save_cache:
+        key: pkg-cache-{{ checksum "Gopkg.lock" }}
+        paths:
+          - "/go/src/github.com/garden-io/garden/vendor"
       - run:
           name: Build All
           command: |
