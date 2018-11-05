@@ -53,6 +53,8 @@ jobs:
           paths:
             - "/go/src/github.com/garden-io/garden/vendor"
       - run: cd garden-cli && go test -v 2>&1 | go-junit-report > /tmp/report.xml
+      - store_artifacts:
+        path: /tmp/report.xml
       - store_test_results: # Upload test results for display in Test Summary
           path: /tmp/report.xml
   test-service:
