@@ -6,11 +6,11 @@ version: 2
 
 ## Configuration here can be shared across jobs
 references:
-  go-config: *go-config
+  go-config: &go-config
     docker:
       - image: circleci/golang:1.10
     working_directory: /go/src/github.com/garden-io/garden
-  go-builder: *go-builder
+  go-builder: &go-builder
         - checkout
         - restore_cache:
             keys:
@@ -32,9 +32,9 @@ references:
 # Jobs definitions
 jobs:
   test-cli:
-    << *go-config
+    <<: *go-config
     steps:
-      << *go-builder
+      <<: *go-builder
       - go test -v
   test-service:
     docker:
