@@ -34,7 +34,7 @@ jobs:
   test-cli:
     <<: *go-config
     steps:
-      <<: *go-builder
+      - *go-builder
       - go test -v
   test-service:
     docker:
