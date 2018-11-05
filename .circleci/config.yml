@@ -56,7 +56,7 @@ jobs:
       - store_artifacts:
           path: /tmp/report.xml
       - store_test_results: # Upload test results for display in Test Summary
-          path: /tmp/report.xml
+          path: /tmp/
   test-service:
     docker:
       - image: circleci/node:10
