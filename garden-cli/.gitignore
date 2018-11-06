@@ -1,0 +1,5 @@
+dist
+build
+# these are the default go output if you don't put -o in go build
+./garden-cli
+./garden
