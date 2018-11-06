@@ -111,9 +111,9 @@ jobs:
           name: test
           command: cd garden-service &&  MOCHA_FILE=build/junit/report.xml ./node_modules/.bin/mocha test --reporter mocha-junit-reporter  --reporter spec
       - store_artifacts:
-          path: build/junit/
+          path: garden-service/build/junit/
       - store_test_results:
-          path: build/junit/report.xml
+          path: garden-service/build/junit/report.xml
 
 workflows:
   version: 2
