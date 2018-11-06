@@ -102,7 +102,7 @@ module.exports = (gulp) => {
     gulp.parallel("add-version-files", "generate-docs", "pegjs", "tsc"),
     "build-container",
   ))
-  gulp.task("test", gulp.parallel("build", "mocha"))
+  gulp.task("test", gulp.parallel("mocha"))
   gulp.task("watch", gulp.parallel("pegjs-watch", "watch-code"))
   gulp.task("default", gulp.series("watch"))
 }
