@@ -50,14 +50,11 @@ jobs:
       - store_artifacts:
           path: garden-cli/build
           destination: /downloads
-  test-node:
+  install:
     docker:
       - image: circleci/node:10
     steps:
       - checkout
-      - run: sudo apt-get update && sudo apt-get install rsync
-      - setup_remote_docker:
-          docker_layer_caching: true
       # Download and cache dependencies
       - restore_cache:
           keys:
@@ -65,9 +62,6 @@ jobs:
       - restore_cache:
           keys:
           - garden-service-{{ checksum "garden-service/package-lock.json" }}
-
-      - run: git submodule update --init --recursive
-
       # only install if node_modules wasn't cached
       - run: if [ ! -d "node_modules" ]; then npm ci; fi
       - save_cache:
@@ -78,6 +72,28 @@ jobs:
       - save_cache:
           paths: [garden-service/node_modules]
           key: garden-service-{{ checksum "garden-service/package-lock.json" }}
+      # Persist the specified paths (workspace/echo-output) into the workspace for use in downstream job.
+      - persist_to_workspace:
+        # Must be an absolute path, or relative path from working_directory. This is a directory on the container which is
+        # taken to be the root directory of the workspace.
+        root: ./
+        # Must be relative path from root
+        paths:
+          - garden-service/node_modules
+          - node_modules
+
+
+  test-node:
+    docker:
+      - image: circleci/node:10
+    steps:
+      - checkout
+      - run: sudo apt-get update && sudo apt-get install rsync
+      - setup_remote_docker:
+          docker_layer_caching: true
+      # restores npm packages
+      - attach_workspace:
+          at: ./
 
       - run:
           name: build
@@ -96,8 +112,11 @@ jobs:
           command: npm run ci-test
 
 workflows:
- version: 2
- all-tests:
-   jobs:
-     - build-go
-     - test-node
+  version: 2
+  all-tests:
+  jobs:
+    - install
+    - build-go
+    - test-node
+        requires:
+          - install
