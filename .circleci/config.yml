@@ -2,17 +2,24 @@
 #
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
-version: 2
-jobs:
-  build-go:
+.references:
+  go-config: &go-config
     docker:
-      - image: circleci/golang:1.10
+    - image: circleci/golang:1.10
     working_directory: /go/src/github.com/garden-io/garden
+
+commands:
+  go_install_deps:
+    description: "A very simple command for demonstration purposes"
+    parameters:
+      to:
+        type: string
+        default: "Hello World"
     steps:
-      - checkout
       - restore_cache:
           keys:
             - pkg-cache-{{ checksum "Gopkg.lock" }}
+      - run: go get -u github.com/jstemmer/go-junit-report
       - run:
           name: Install dep
           command: |
@@ -25,30 +32,31 @@ jobs:
           key: pkg-cache-{{ checksum "Gopkg.lock" }}
           paths:
             - "/go/src/github.com/garden-io/garden/vendor"
+version: 2.1
+jobs:
+  test-go:
+    <<: *go-config
+    steps:
+      - checkout
+      - go_install_deps
       - run:
-          name: Build All
+          name: Unit Tests
           command: |
             cd garden-cli
-            package_name="garden"
-            platforms=("windows/amd64" "windows/386" "darwin/amd64" "linux/amd64")
-            for platform in "${platforms[@]}"
-            do
-                platform_split=(${platform//\// })
-                GOOS=${platform_split[0]}
-                GOARCH=${platform_split[1]}
-                output_name=$package_name'-'$GOOS'-'$GOARCH
-                if [ $GOOS = "windows" ]; then
-                    output_name+='.exe'
-                fi
-
-                env GOOS=$GOOS GOARCH=$GOARCH go build -o build/$output_name
-                if [ $? -ne 0 ]; then
-                    echo 'An error has occurred! Aborting the script execution...'
-                    exit 1
-                fi
-            done
+            go test -v 2>&1 | go-junit-report > /tmp/report.xml
       - store_artifacts:
-          path: garden-cli/build
+          path: /tmp/report.xml
+      - store_test_results:
+          path: /tmp/
+  build-go:
+    <<: *go-config
+    steps:
+      - checkout
+      - go_install_deps
+      - run: go get -u github.com/goreleaser/goreleaser
+      - run: cd garden-cli && goreleaser --snapshot --rm-dist
+      - store_artifacts:
+          path: garden-cli/dist/
           destination: /downloads
   test-node:
     docker:
@@ -99,5 +107,6 @@ workflows:
  version: 2
  all-tests:
    jobs:
+     - test-go
      - build-go
-     - test-node
+     #- test-node
