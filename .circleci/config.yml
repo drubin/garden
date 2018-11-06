@@ -114,9 +114,9 @@ jobs:
 workflows:
   version: 2
   all-tests:
-  jobs:
-    - install
-    - build-go
-    - test-node
-        requires:
-          - install
+    jobs:
+      - install
+      - build-go
+      - test-node:
+          requires:
+            - install
