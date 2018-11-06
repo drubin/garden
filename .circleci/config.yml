@@ -95,9 +95,9 @@ jobs:
       - attach_workspace:
           at: ./
 
-      - run:
-          name: build
-          command: npm run ci-build
+      # - run:
+      #     name: build
+      #     command: npm run ci-build
 
       - run:
           name: Make sure generated docs are up-to-date
