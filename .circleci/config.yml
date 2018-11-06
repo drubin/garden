@@ -72,6 +72,7 @@ jobs:
       - save_cache:
           paths: [garden-service/node_modules]
           key: garden-service-{{ checksum "garden-service/package-lock.json" }}
+      - run: ./node_modules/.bin/gulp garden-service:pegjs garden-service:tsc
       # Persist the specified paths (workspace/echo-output) into the workspace for use in downstream job.
       - persist_to_workspace:
           # Must be an absolute path, or relative path from working_directory. This is a directory on the container which is
@@ -80,6 +81,8 @@ jobs:
           # Must be relative path from root
           paths:
             - garden-service/node_modules
+            # Save the built output for future
+            - garden-service/build/
             - node_modules
 
 
@@ -95,9 +98,9 @@ jobs:
       - attach_workspace:
           at: ./
 
-      # - run:
-      #     name: build
-      #     command: npm run ci-build
+      - run:
+          name: build
+          command: npm run ci-build
 
       - run:
           name: Make sure generated docs are up-to-date
@@ -114,6 +117,10 @@ jobs:
           path: /tmp/report.xml
       - store_test_results:
           path: /tmp/
+
+      - run:
+          name: Test build docker image
+          command: docker build -t testbuild garden-service
 
 workflows:
   version: 2
