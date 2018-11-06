@@ -113,16 +113,16 @@ jobs:
             MOCHA_FILE: /tmp/report.xml
           command: cd garden-service ./node_modules/.bin/mocha test --reporter mocha-junit-reporter  --reporter spec
       - store_artifacts:
-          path: /tmp/report.xml
-      - store_test_results:
           path: /tmp/
+      - store_test_results:
+          path: /tmp/report.xml
 
 workflows:
   version: 2
   all-tests:
     jobs:
       - install
-      - build-go
+      #- build-go
       - test-node:
           requires:
             - install
