@@ -109,7 +109,7 @@ jobs:
 
       - run:
           name: test
-          command: cd garden-service  MOCHA_FILE=build/junit/report.xml ./node_modules/.bin/mocha test --reporter mocha-junit-reporter  --reporter spec
+          command: cd garden-service &&  MOCHA_FILE=build/junit/report.xml ./node_modules/.bin/mocha test --reporter mocha-junit-reporter  --reporter spec
       - store_artifacts:
           path: build/junit/
       - store_test_results:
