@@ -140,9 +140,7 @@ jobs:
 
       - run:
           name: build
-          # TODO:  Remove docker building and linting/checking
-          # Just needs basic tscompiel part
-          command: npm run ci-build
+          command: gulp garden-service:pegjs garden-service:tsc
       # Save the built output to be used for the docker image
       - persist_to_workspace:
           # Must be an absolute path, or relative path from working_directory. This is a directory on the container which is
@@ -163,7 +161,7 @@ jobs:
 
       - run:
           name: test
-          command: npm run ci-test
+          command: npm run test
 
 workflows:
   version: 2
