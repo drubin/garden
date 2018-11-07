@@ -3,7 +3,7 @@
 
 ## Personal Play Ground
 
-** Please use the upstream fork of this repo https://github.com/garden-io/garden **
+###  Please use the upstream fork of this repo https://github.com/garden-io/garden
 
 This is my personal space for testing CI / build configurations :)
 
