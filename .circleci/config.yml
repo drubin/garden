@@ -51,7 +51,7 @@ commands:
       image:
         description: Name of image to create. Defaults to a combination of $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME.
         type: string
-        default: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
+        default: $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME
       tag:
         description: Value for tag to use. Defaults to $CIRCLE_SHA1.
         type: string
@@ -93,8 +93,19 @@ jobs:
     <<: *node-config
     steps:
       - checkout
-      - docker_build
+      - docker_build:
           context: garden-sync
+          image: $DOCKER_ORG/garden-sync
+  build-service:
+    <<: *node-config
+    steps:
+      - checkout
+      # This is to copy the pre-build build output from test-node (this should be a different step)
+      - attach_workspace:
+          at: ./
+      - docker_build:
+          context: "garden-service"
+          image: $DOCKER_ORG/garden-service
   test-node:
     <<: *node-config
     steps:
@@ -125,7 +136,18 @@ jobs:
 
       - run:
           name: build
+          # TODO:  Remove docker building and linting/checking
+          # Just needs basic tscompiel part
           command: npm run ci-build
+      # Save the built output to be used for the docker image
+      - persist_to_workspace:
+          # Must be an absolute path, or relative path from working_directory. This is a directory on the container which is
+          # taken to be the root directory of the workspace.
+          root: ./
+          # Must be relative path from root
+          paths:
+            # Save the built output for future
+            - garden-service/build/
 
       - run:
           name: Make sure generated docs are up-to-date
@@ -140,11 +162,19 @@ jobs:
           command: npm run ci-test
 
 workflows:
- version: 2
- all-tests:
-   jobs:
-     - test-go
-     - test-node
-     # Fast enough to run on every branch
-     - build-go
+  version: 2
+  all-tests:
+    jobs:
+      - test-go
+      - test-node
+      # Fast enough to run on every branch
+      - build-go
+      - build-sync:
+          context: docker
+      # Depends on test-node for now...
+      - build-service:
+          context: docker
+          requires:
+            - test-node
+
 
