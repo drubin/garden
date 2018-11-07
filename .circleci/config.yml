@@ -37,7 +37,33 @@ commands:
           key: pkg-cache-{{ checksum "Gopkg.lock" }}
           paths:
             - "/go/src/github.com/garden-io/garden/vendor"
-
+  docker_build:
+    description: Builds and Tags a Docker Image.
+    parameters:
+      context:
+        description: Directory to build in
+        type: string
+        default: .
+      dockerfile:
+        description: Name of dockerfile to use. Defaults to Dockerfile in working directory.
+        type: string
+        default: Dockerfile
+      image:
+        description: Name of image to create. Defaults to a combination of $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME.
+        type: string
+        default: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
+      tag:
+        description: Value for tag to use. Defaults to $CIRCLE_SHA1.
+        type: string
+        default: $CIRCLE_SHA1
+      registry:
+        description: Name of registry to use. Defaults to docker.io.
+        type: string
+        default: docker.io
+    steps:
+      - run:
+          name: Build Docker Image
+          command: docker build -f << parameters.dockerfile >> -t << parameters.registry >>/<< parameters.image >>:<< parameters.tag >> << parameters.context >>
 jobs:
   test-go:
     <<: *go-config
@@ -63,6 +89,12 @@ jobs:
       - store_artifacts:
           path: garden-cli/dist/
           destination: /downloads
+  build-sync:
+    <<: *node-config
+    steps:
+      - checkout
+      - docker_build
+          context: garden-sync
   test-node:
     <<: *node-config
     steps:
