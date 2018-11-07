@@ -94,6 +94,7 @@ jobs:
     steps:
       - checkout
       - docker_build:
+          dockerfile: garden-sync/Dockerfile
           context: garden-sync
           image: $DOCKER_ORG/garden-sync
   build-service:
@@ -104,6 +105,7 @@ jobs:
       - attach_workspace:
           at: ./
       - docker_build:
+          dockerfile: garden-service/Dockerfile
           context: "garden-service"
           image: $DOCKER_ORG/garden-service
   test-node:
