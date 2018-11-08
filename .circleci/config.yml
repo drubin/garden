@@ -203,19 +203,26 @@ workflows:
   version: 2
   commit:
     jobs:
-      # - test-go
-      # - test-node
-      # # Fast enough to run on every branch
-      # - build-go
+      - test-go
+      - test-node
       - build-sync
-      # Depends on test-node for now...
-      # - build-service:
-      #     context: docker
-      #     requires:
-      #       - test-node
+      - build-service:
+          context: docker
+          requires:
+            - test-node
   master:
     jobs:
-      - build-sync
+      # Duplicated here so we can refernce steps
+      - test-node:
+          <<: *only-master
       - release-sync:
           <<: *only-master
           context: docker
+      - release-service:
+          <<: *only-master
+          context: docker
+          requires:
+            - test-node
+      - build-go:
+          <<: *only-master
+
