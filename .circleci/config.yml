@@ -146,6 +146,9 @@ jobs:
     <<: *node-config
     steps:
       - checkout
+      # This is to copy the pre-build build output from test-node (this should be a different step)
+      - attach_workspace:
+          at: ./
       - docker_release:
           context: garden-service
           image: $DOCKER_ORG/garden-service
