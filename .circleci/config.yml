@@ -165,7 +165,8 @@ jobs:
       - checkout
       - go_install_deps
       - run: go get -u github.com/goreleaser/goreleaser
-      - run: Build Go clid
+      - run:
+          name: Build Go cli
           command: |
             cd garden-cli
             # Set to snapshot builds unless we are on a git tag
