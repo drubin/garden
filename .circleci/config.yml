@@ -5,18 +5,23 @@ version: 2.1
 # These can be used to inject shared variables
 # see https://blog.daemonl.com/2016/02/yaml.html
 .references:
+  # Go configuration for all our jobs
   go-config: &go-config
     docker:
     - image: circleci/golang:1.10
     working_directory: /go/src/github.com/garden-io/garden
 
+  # Configuration for our node jobs
   node-config: &node-config
     docker:
       - image: circleci/node:10
 
+  # Attach's the current saved workspace
   attach-node-workspace: &attach-node-workspace
     attach_workspace:
           at: ./
+
+  # Only run jobs on master
   only-master: &only-master
     filters:
       branches:
@@ -24,6 +29,7 @@ version: 2.1
       tags:
         ignore: /.*/
 
+  # Only run on versioned tags
   only-tags: &only-tags
     filters:
       branches:
@@ -37,7 +43,8 @@ version: 2.1
 # and example https://github.com/mapbox/mapbox-gl-native/blob/master/circle.yml
 commands:
   npm_install:
-    description: "Installs npm packages for root and garden-service"
+    description: |
+      Installs npm packages for root and garden-service and loads and saves the caches as appropriate
     steps:
       - restore_cache:
           keys:
@@ -55,8 +62,10 @@ commands:
       - save_cache:
           paths: [garden-service/node_modules]
           key: garden-service-{{ checksum "garden-service/package-lock.json" }}
+
   go_install_deps:
-    description: "Installs and caches dependencies with dep"
+    description: |
+      Installs our go dependancies and deals with caching and loading the cache
     steps:
       - restore_cache:
           keys:
@@ -66,6 +75,7 @@ commands:
           name: Install dep
           command: |
             if [ ! -d /go/src/github.com/garden-io/garden/vendor ]; then
+                # This needs to match the version installed locally
                 curl -L -s https://github.com/golang/dep/releases/download/v0.5.0/dep-linux-amd64 -o /go/bin/dep
                 chmod +x /go/bin/dep
                 /go/bin/dep ensure
@@ -74,8 +84,9 @@ commands:
           key: pkg-cache-{{ checksum "Gopkg.lock" }}
           paths:
             - "/go/src/github.com/garden-io/garden/vendor"
+
   docker_build:
-    description: Builds and Tags a Docker Image.
+    description: Builds and Tags a Docker Image
     parameters:
       context:
         description: Directory to build in
@@ -89,8 +100,11 @@ commands:
           command: |
             # Just build it with the approprate tag
             docker build -t << parameters.context >> << parameters.context >>
+
   docker_release:
-    description: Builds and Tags a Docker Image.
+    description: |
+      Builds and publishes a docker image to the public registry.
+      It automatically switches between git tag and `:master`
     parameters:
       context:
         description: Directory to build in
@@ -126,6 +140,10 @@ commands:
             docker build -t << parameters.context >> << parameters.context >>
             docker tag << parameters.context >>  << parameters.registry >>/<< parameters.image >>:$TAG
             docker push << parameters.registry >>/<< parameters.image >>:$TAG
+
+#
+# Jobs section
+#
 jobs:
   test-go:
     <<: *go-config
@@ -227,6 +245,19 @@ jobs:
           name: Publish package
           command: cd garden-service && npm publish
 
+  release-service-pkg:
+     <<: *node-config
+    steps:
+      - checkout
+      - apt-get install rsync
+      - *attach-node-workspace
+      - npm_install
+      - run:
+          command: ./garden-service/scripts/build-pkg.sh
+      - store_artifacts:
+          path: garden-service/dist/
+          destination: /downloads
+
 workflows:
   version: 2
   commit:
@@ -269,6 +300,10 @@ workflows:
             - test-node
       - build-go:
           <<: *only-tags
+      - release-service-pkg:
+          <<: *only-tags
+          requires:
+            - test-node
       - release-service-npm:
           <<: *only-tags
           context: npm
