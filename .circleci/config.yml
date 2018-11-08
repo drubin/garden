@@ -246,7 +246,7 @@ jobs:
           command: cd garden-service && npm publish
 
   release-service-pkg:
-     <<: *node-config
+    <<: *node-config
     steps:
       - checkout
       - apt-get install rsync
