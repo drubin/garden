@@ -55,7 +55,7 @@ commands:
       tag:
         description: Value for tag to use. Defaults to $CIRCLE_SHA1.
         type: string
-        default: $CIRCLE_SHA1
+        default: $CIRCLE_TAG
       registry:
         description: Name of registry to use. Defaults to docker.io.
         type: string
@@ -72,12 +72,17 @@ commands:
           command: |
             # Just build it with the approprate tag
             docker build -t << parameters.context >> << parameters.context >>
-      - when:
-          condition: << parameters.release >>
-          steps:
-            - run: echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-            - run: docker tag << parameters.context >>  << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
-            - run: docker push << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
+      - run:
+          name: Release docker image (if CIRCLE_TAG)
+          command: |
+            if [[ -z $DOCKER_PASS || -z $DOCKER_USER || -z $CIRCLE_TAG ]]; then
+              echo 'one or more variables are undefined [DOCKER_PASS, DOCKER_USER, CIRCLE_TAG]'
+              echo 'releasing step has been skipped'
+              exit 0
+            fi
+            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+            docker tag << parameters.context >>  << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
+            docker push << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
 jobs:
   test-go:
     <<: *go-config
@@ -108,7 +113,6 @@ jobs:
     steps:
       - checkout
       - docker_build:
-          dockerfile: garden-sync/Dockerfile
           context: garden-sync
           image: $DOCKER_ORG/garden-sync
           release: true
@@ -120,7 +124,6 @@ jobs:
       - attach_workspace:
           at: ./
       - docker_build:
-          dockerfile: garden-service/Dockerfile
           context: garden-service
           image: $DOCKER_ORG/garden-service
   test-node:
