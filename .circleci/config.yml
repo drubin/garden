@@ -73,7 +73,7 @@ commands:
             # Just build it with the approprate tag
             docker build -t << parameters.context >> << parameters.context >>
       - when:
-          condition: <<parameters.release>>
+          condition: << parameters.release >>
           steps:
             - run: docker tag << parameters.context >>  << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
             - run: docker push << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
@@ -110,7 +110,7 @@ jobs:
           dockerfile: garden-sync/Dockerfile
           context: garden-sync
           image: $DOCKER_ORG/garden-sync
-  build-service:
+          release: true
     <<: *node-config
     steps:
       - checkout
@@ -161,7 +161,6 @@ jobs:
           paths:
             # Save the built output for future
             - garden-service/build/
-
       - run:
           name: Make sure generated docs are up-to-date
           command: npm run check-docs
@@ -178,16 +177,16 @@ workflows:
   version: 2
   all-tests:
     jobs:
-      - test-go
-      - test-node
-      # Fast enough to run on every branch
-      - build-go
+      # - test-go
+      # - test-node
+      # # Fast enough to run on every branch
+      # - build-go
       - build-sync:
           context: docker
       # Depends on test-node for now...
-      - build-service:
-          context: docker
-          requires:
-            - test-node
+      # - build-service:
+      #     context: docker
+      #     requires:
+      #       - test-node
 
 
