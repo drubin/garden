@@ -214,6 +214,5 @@ workflows:
   master:
     jobs:
       - release-sync:
+          <<: *only-master
           context: docker
-        <<: *only-master
-
