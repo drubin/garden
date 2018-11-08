@@ -20,6 +20,14 @@ version: 2.1
       tags:
         ignore: /.*/
 
+  only-tags: &only-tags
+    filters:
+      branches:
+        ignore: /.*/
+      tags:
+        # Technically could be a better regex but for now just starting with v feels good enough
+        only: /v.*/
+
 # Reuseable commands to execute in jobs
 # see https://circleci.com/docs/2.0/configuration-reference/#commands-requires-version21
 # and example https://github.com/mapbox/mapbox-gl-native/blob/master/circle.yml
@@ -217,7 +225,7 @@ workflows:
             - test-node
   master:
     jobs:
-      # Duplicated here so we can refernce steps
+      # Duplicated here so we can refernce steps that depends on it
       - test-node:
           <<: *only-master
       - release-sync:
@@ -231,3 +239,18 @@ workflows:
       - build-go:
           <<: *only-master
 
+  tags:
+    jobs:
+      # Duplicated here so we can refernce steps that depends on it
+      - test-node:
+          <<: *only-tags
+      - release-sync:
+          <<: *only-tags
+          context: docker
+      - release-service:
+          <<: *only-tags
+          context: docker
+          requires:
+            - test-node
+      - build-go:
+          <<: *only-tags
