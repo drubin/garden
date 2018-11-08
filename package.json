@@ -57,7 +57,7 @@
     "release-canary": "./bin/publish-canary",
     "test": "gulp test",
     "ci-build": "gulp garden-service:ci-build",
-    "ci-test": "gulp garden-service:ci-test"
+    "ci-test": "gulp garden-service:mocha"
   },
   "husky": {
     "hooks": {

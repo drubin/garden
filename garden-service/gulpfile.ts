@@ -107,10 +107,6 @@ module.exports = (gulp) => {
     "add-version-files", "generate-docs", "pegjs", "tsc",
   ))
 
-  gulp.task("ci-test", gulp.series(
-    "ci-build", "mocha",
-  ))
-
   gulp.task("test", gulp.parallel("build", "mocha"))
   gulp.task("watch", gulp.parallel("pegjs-watch", "watch-code"))
   gulp.task("default", gulp.series("watch"))

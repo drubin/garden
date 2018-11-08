@@ -171,7 +171,7 @@ jobs:
             cd garden-cli
             # Set to snapshot builds unless we are on a git tag
             FLAGS="--snapshot"
-            if [[] -n "$CIRCLE_TAG" ]]; then
+            if [[ -n "$CIRCLE_TAG" ]]; then
               FLAGS=""
             fi
             # Build them all
@@ -197,8 +197,7 @@ jobs:
     steps:
       - checkout
       # This is to copy the pre-build build output from test-node (this should be a different step)
-      - attach_workspace:
-          at: ./
+      - *attach-node-workspace
       - docker_build:
           context: garden-service
   release-service-docker:
@@ -210,7 +209,7 @@ jobs:
       - docker_release:
           context: garden-service
           image: $DOCKER_ORG/garden-service
-  test-node:
+  build-node:
     <<: *node-config
     steps:
       - checkout
@@ -220,7 +219,7 @@ jobs:
       - npm_install
       - run:
           name: build
-          command: ./node_modules/.bin/gulp garden-service:pegjs garden-service:tsc
+          command: npm run ci-build
       # Save the built output to be used for the docker image
       - persist_to_workspace:
           # Must be an absolute path, or relative path from working_directory. This is a directory on the container which is
@@ -230,25 +229,31 @@ jobs:
           paths:
             # Save the built output for future
             - garden-service/build/
+  test-node:
+    <<: *node-config
+    steps:
+      - checkout
+      - run: sudo apt-get update && sudo apt-get install rsync
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - npm_install
+      - *attach-node-workspace
       - run:
           name: Make sure generated docs are up-to-date
           command: npm run check-docs
-
       - run:
           name: lint
           command: npm run lint
-
       - run:
           name: test
           command: |
-            # Todo fix the build system
             npm run ci-test
   release-service-npm:
     <<: *node-config
     steps:
       - checkout
-      - *attach-node-workspace
       - npm_install
+      - *attach-node-workspace
       - run:
           name: Authenticate with registry
           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
@@ -260,10 +265,10 @@ jobs:
     <<: *node-config
     steps:
       - checkout
+      - npm_install
       - run: sudo apt-get update && sudo apt-get -y install rsync
       - *attach-node-workspace
       - run: sudo npm install -g pkg
-      - npm_install
       - run:
           command: ./garden-service/scripts/build-pkg.sh
       - store_artifacts:
@@ -274,18 +279,25 @@ workflows:
   version: 2
   # commit:
   #   jobs:
-  #     - test-go
+  #     - build-node
+  #     - test-go:
+  #         requires:
+  #           - build-node
   #     - test-node
   #     - build-sync
   #     - build-service:
   #         context: docker
   #         requires:
-  #           - test-node
+  #           - build-node
   master:
     jobs:
       # Duplicated here so we can refernce steps that depends on it
+      - build-node:
+          <<: *only-master
       - test-node:
           <<: *only-master
+          requires:
+            - build-node
       - release-sync:
           <<: *only-master
           context: docker
@@ -293,19 +305,23 @@ workflows:
           <<: *only-master
           context: docker
           requires:
-            - test-node
+            - build-node
       - release-service-pkg:
           <<: *only-master
           requires:
-            - test-node
+            - build-node
       - build-go:
           <<: *only-master
 
   tags:
     jobs:
       # Duplicated here so we can refernce steps that depends on it
+      - build-node:
+          <<: *only-tags
       - test-node:
           <<: *only-tags
+          requires:
+          - build-node
       - release-sync:
           <<: *only-tags
           context: docker
@@ -313,15 +329,15 @@ workflows:
           <<: *only-tags
           context: docker
           requires:
-            - test-node
+            - build-node
       - build-go:
           <<: *only-tags
       - release-service-pkg:
           <<: *only-tags
           requires:
-            - test-node
+            - build-node
       - release-service-npm:
           <<: *only-tags
           context: npm
           requires:
-            - test-node
+            - build-node
