@@ -283,7 +283,7 @@ workflows:
           requires:
             - test-node
       - release-service-pkg:
-          <<: *only-tags
+          <<: *only-master
           requires:
             - test-node
       - build-go:
