@@ -177,7 +177,7 @@ jobs:
 
       - run:
           name: build
-          command: gulp garden-service:pegjs garden-service:tsc
+          command: ./node_modules/.bin/gulp garden-service:pegjs garden-service:tsc
       # Save the built output to be used for the docker image
       - persist_to_workspace:
           # Must be an absolute path, or relative path from working_directory. This is a directory on the container which is
