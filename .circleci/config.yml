@@ -49,7 +49,7 @@ commands:
         type: string
         default: Dockerfile
       image:
-        description: Name of image to create. Defaults to a combination of $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME.
+        description: Name of image to create. Defaults to a combination of $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME.
         type: string
         default: $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME
       tag:
@@ -60,12 +60,23 @@ commands:
         description: Name of registry to use. Defaults to docker.io.
         type: string
         default: docker.io
+      release:
+        description: to release to public registry or not
+        type: boolean
+        default: false
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
           name: Build Docker Image
-          command: docker build -f << parameters.dockerfile >> -t << parameters.registry >>/<< parameters.image >>:<< parameters.tag >> << parameters.context >>
+          command: |
+            # Just build it with the approprate tag
+            docker build -t << parameters.context >> << parameters.context >>
+      - when:
+          condition: <<parameters.release>>
+          steps:
+            - run: docker tag << parameters.context >>  << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
+            - run: docker push << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
 jobs:
   test-go:
     <<: *go-config
