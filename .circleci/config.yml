@@ -13,6 +13,10 @@ version: 2.1
   node-config: &node-config
     docker:
       - image: circleci/node:10
+
+  attach-node-workspace: &attach-node-workspace
+    attach_workspace:
+          at: ./
   only-master: &only-master
     filters:
       branches:
@@ -150,13 +154,12 @@ jobs:
           at: ./
       - docker_build:
           context: garden-service
-  release-service:
+  release-service-docker:
     <<: *node-config
     steps:
       - checkout
       # This is to copy the pre-build build output from test-node (this should be a different step)
-      - attach_workspace:
-          at: ./
+      - *attach-node-workspace
       - docker_release:
           context: garden-service
           image: $DOCKER_ORG/garden-service
@@ -212,6 +215,19 @@ jobs:
           name: test
           command: npm run test
 
+  release-service-npm:
+    <<: *node-config
+    steps:
+      - checkout
+      - *attach-node-workspace
+      # TODO check version matches _TAG
+      - run:
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+      - run:
+          name: Publish package
+          command: npm publish
+
 workflows:
   version: 2
   commit:
@@ -231,7 +247,7 @@ workflows:
       - release-sync:
           <<: *only-master
           context: docker
-      - release-service:
+      - release-service-docker:
           <<: *only-master
           context: docker
           requires:
@@ -247,10 +263,15 @@ workflows:
       - release-sync:
           <<: *only-tags
           context: docker
-      - release-service:
+      - release-service-docker:
           <<: *only-tags
           context: docker
           requires:
             - test-node
       - build-go:
           <<: *only-tags
+      - release-service-npm:
+          <<: *only-tags
+          context: npm
+          requires:
+            - test-node
