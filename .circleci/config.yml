@@ -249,7 +249,7 @@ jobs:
     <<: *node-config
     steps:
       - checkout
-      - apt-get install rsync
+      - run: apt-get install rsync
       - *attach-node-workspace
       - npm_install
       - run:
