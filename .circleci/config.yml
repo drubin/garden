@@ -186,8 +186,8 @@ workflows:
       # - test-node
       # # Fast enough to run on every branch
       # - build-go
-      - build-sync
-        #  context: docker
+      - build-sync:
+          context: docker
       # Depends on test-node for now...
       # - build-service:
       #     context: docker
