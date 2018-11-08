@@ -240,8 +240,11 @@ jobs:
 
       - run:
           name: test
-          command: npm run test
-
+          command: |
+            cd garden-service
+            # Todo fix the build system
+            ./node_modules/.bin/gulp add-version-files generate-docs pegjs tsc
+            ./node_modules/.bin/gulp mocha
   release-service-npm:
     <<: *node-config
     steps:
@@ -261,7 +264,7 @@ jobs:
       - checkout
       - run: sudo apt-get update && sudo apt-get -y install rsync
       - *attach-node-workspace
-      - run: npm install -g pkg
+      - run: sudo npm install -g pkg
       - npm_install
       - run:
           command: ./garden-service/scripts/build-pkg.sh
