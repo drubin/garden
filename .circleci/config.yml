@@ -165,7 +165,16 @@ jobs:
       - checkout
       - go_install_deps
       - run: go get -u github.com/goreleaser/goreleaser
-      - run: cd garden-cli && goreleaser --snapshot --rm-dist
+      - run: Build Go clid
+          command: |
+            cd garden-cli
+            # Set to snapshot builds unless we are on a git tag
+            FLAGS="--snapshot"
+            if [[] -n "$CIRCLE_TAG" ]]; then
+              FLAGS=""
+            fi
+            # Build them all
+            goreleaser $FLAGS --rm-dist
       - store_artifacts:
           path: garden-cli/dist/
           destination: /downloads
