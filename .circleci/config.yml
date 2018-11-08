@@ -261,6 +261,7 @@ jobs:
       - checkout
       - run: sudo apt-get update && sudo apt-get -y install rsync
       - *attach-node-workspace
+      - run: npm install -g pkg
       - npm_install
       - run:
           command: ./garden-service/scripts/build-pkg.sh
