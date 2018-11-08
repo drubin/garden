@@ -13,6 +13,10 @@ version: 2.1
   node-config: &node-config
     docker:
       - image: circleci/node:10
+  only-master: &only-master
+    filters:
+      branches:
+        only: master
 
 # Reuseable commands to execute in jobs
 # see https://circleci.com/docs/2.0/configuration-reference/#commands-requires-version21
@@ -44,6 +48,21 @@ commands:
         description: Directory to build in
         type: string
         default: .
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build Docker Image
+          command: |
+            # Just build it with the approprate tag
+            docker build -t << parameters.context >> << parameters.context >>
+  docker_release:
+    description: Builds and Tags a Docker Image.
+    parameters:
+      context:
+        description: Directory to build in
+        type: string
+        default: .
       dockerfile:
         description: Name of dockerfile to use. Defaults to Dockerfile in working directory.
         type: string
@@ -52,10 +71,6 @@ commands:
         description: Name of image to create. Defaults to a combination of $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME.
         type: string
         default: $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME
-      tag:
-        description: Value for tag to use. Defaults to $CIRCLE_SHA1.
-        type: string
-        default: $CIRCLE_TAG
       registry:
         description: Name of registry to use. Defaults to docker.io.
         type: string
@@ -67,22 +82,13 @@ commands:
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
-      - run:
-          name: Build Docker Image
+      - docker:
+          name: Release docker image
           command: |
-            # Just build it with the approprate tag
+            TAG=${$CIRCLE_TAG:-master}
             docker build -t << parameters.context >> << parameters.context >>
-      - run:
-          name: Release docker image (if CIRCLE_TAG)
-          command: |
-            if [[ -z $DOCKER_PASS || -z $DOCKER_USER || -z $CIRCLE_TAG ]]; then
-              echo 'Required variables are missing [DOCKER_PASS, DOCKER_USER, CIRCLE_TAG]'
-              echo 'releasing will be skipped'
-              exit 0
-            fi
-            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-            docker tag << parameters.context >>  << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
-            docker push << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
+            docker tag << parameters.context >>  << parameters.registry >>/<< parameters.image >>:$TAG
+            docker push << parameters.registry >>/<< parameters.image >>:$TAG
 jobs:
   test-go:
     <<: *go-config
@@ -114,8 +120,13 @@ jobs:
       - checkout
       - docker_build:
           context: garden-sync
+  release-sync:
+    <<: *node-config
+    steps:
+      - checkout
+      - docker_release:
+          context: garden-sync
           image: $DOCKER_ORG/garden-sync
-          release: true
   build-service:
     <<: *node-config
     steps:
@@ -124,6 +135,12 @@ jobs:
       - attach_workspace:
           at: ./
       - docker_build:
+          context: garden-service
+  release-service:
+    <<: *node-config
+    steps:
+      - checkout
+      - docker_release:
           context: garden-service
           image: $DOCKER_ORG/garden-service
   test-node:
@@ -180,18 +197,21 @@ jobs:
 
 workflows:
   version: 2
-  all-tests:
+  commit:
     jobs:
       # - test-go
       # - test-node
       # # Fast enough to run on every branch
       # - build-go
-      - build-sync:
-          context: docker
+      - build-sync
       # Depends on test-node for now...
       # - build-service:
       #     context: docker
       #     requires:
       #       - test-node
-
+  master:
+    jobs:
+      - build-sync:
+          context: docker
+          <<: *only-master
 
