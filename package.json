@@ -55,7 +55,9 @@
     "preversion": "npm test",
     "release": "./bin/publish",
     "release-canary": "./bin/publish-canary",
-    "test": "gulp test"
+    "test": "gulp test",
+    "ci-build": "gulp garden-service:ci-build",
+    "ci-test": "gulp garden-service:ci-test"
   },
   "husky": {
     "hooks": {
