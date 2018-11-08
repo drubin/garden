@@ -75,6 +75,7 @@ commands:
       - when:
           condition: << parameters.release >>
           steps:
+            - run: echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
             - run: docker tag << parameters.context >>  << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
             - run: docker push << parameters.registry >>/<< parameters.image >>:<< parameters.tag >>
 jobs:
