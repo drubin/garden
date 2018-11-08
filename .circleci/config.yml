@@ -82,9 +82,11 @@ commands:
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
-      - docker:
+      - deploy:
           name: Release docker image
           command: |
+            # Switches between git tag and master for releases
+            # To make a bit smarter later
             TAG=${$CIRCLE_TAG:-master}
             docker build -t << parameters.context >> << parameters.context >>
             docker tag << parameters.context >>  << parameters.registry >>/<< parameters.image >>:$TAG
@@ -213,5 +215,5 @@ workflows:
     jobs:
       - release-sync:
           context: docker
-          <<: *only-master
+        <<: *only-master
 
