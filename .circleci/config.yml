@@ -282,6 +282,10 @@ workflows:
           context: docker
           requires:
             - test-node
+      - release-service-pkg:
+          <<: *only-tags
+          requires:
+            - test-node
       - build-go:
           <<: *only-master
 
