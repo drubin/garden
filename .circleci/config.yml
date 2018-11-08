@@ -76,8 +76,8 @@ commands:
           name: Release docker image (if CIRCLE_TAG)
           command: |
             if [[ -z $DOCKER_PASS || -z $DOCKER_USER || -z $CIRCLE_TAG ]]; then
-              echo 'one or more variables are undefined [DOCKER_PASS, DOCKER_USER, CIRCLE_TAG]'
-              echo 'releasing step has been skipped'
+              echo 'Required variables are missing [DOCKER_PASS, DOCKER_USER, CIRCLE_TAG]'
+              echo 'releasing will be skipped'
               exit 0
             fi
             echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
@@ -186,7 +186,7 @@ workflows:
       # - test-node
       # # Fast enough to run on every branch
       # - build-go
-      - build-sync:
+      - build-sync
         #  context: docker
       # Depends on test-node for now...
       # - build-service:
