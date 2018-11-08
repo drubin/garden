@@ -272,15 +272,15 @@ jobs:
 
 workflows:
   version: 2
-  commit:
-    jobs:
-      - test-go
-      - test-node
-      - build-sync
-      - build-service:
-          context: docker
-          requires:
-            - test-node
+  # commit:
+  #   jobs:
+  #     - test-go
+  #     - test-node
+  #     - build-sync
+  #     - build-service:
+  #         context: docker
+  #         requires:
+  #           - test-node
   master:
     jobs:
       # Duplicated here so we can refernce steps that depends on it
