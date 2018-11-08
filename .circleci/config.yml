@@ -111,6 +111,7 @@ jobs:
           context: garden-sync
           image: $DOCKER_ORG/garden-sync
           release: true
+  build-service:
     <<: *node-config
     steps:
       - checkout
