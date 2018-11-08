@@ -215,7 +215,7 @@ workflows:
       #       - test-node
   master:
     jobs:
-      - build-sync:
+      - build-sync
       - release-sync:
           <<: *only-master
           context: docker
