@@ -85,6 +85,8 @@ commands:
       - deploy:
           name: Release docker image
           command: |
+            # These values are inject from context docker
+            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
             # Switches between git tag and master for releases
             # To make a bit smarter later
             TAG=${CIRCLE_TAG:-master}
@@ -213,6 +215,7 @@ workflows:
       #       - test-node
   master:
     jobs:
+      - build-sync:
       - release-sync:
           <<: *only-master
           context: docker
