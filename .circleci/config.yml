@@ -87,7 +87,7 @@ commands:
           command: |
             # Switches between git tag and master for releases
             # To make a bit smarter later
-            TAG=${$CIRCLE_TAG:-master}
+            TAG=${CIRCLE_TAG:-master}
             docker build -t << parameters.context >> << parameters.context >>
             docker tag << parameters.context >>  << parameters.registry >>/<< parameters.image >>:$TAG
             docker push << parameters.registry >>/<< parameters.image >>:$TAG
