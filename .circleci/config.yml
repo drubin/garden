@@ -241,10 +241,9 @@ jobs:
       - run:
           name: test
           command: |
-            cd garden-service
             # Todo fix the build system
-            ./node_modules/.bin/gulp add-version-files generate-docs pegjs tsc
-            ./node_modules/.bin/gulp mocha
+            ./node_modules/.bin/gulp garden-service:add-version-files garden-service:generate-docs garden-service:pegjs garden-service:tsc
+            ./node_modules/.bin/gulp garden-service:mocha
   release-service-npm:
     <<: *node-config
     steps:
