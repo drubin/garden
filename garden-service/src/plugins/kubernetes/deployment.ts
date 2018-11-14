@@ -7,7 +7,7 @@
  */
 
 import deline = require("deline")
-import { resolve } from "path"
+import { resolve, basename, dirname  } from "path"
 import {
   extend,
   get,
@@ -399,10 +399,16 @@ function configureVolumes(deployment, container, spec): void {
 */
 function configureHotReload(deployment, container, serviceSpec, moduleSpec, env, imageId) {
 
+  const mountPath = "/.garden/hot_reload"
   const syncVolumeName = `garden-sync-volume-${serviceSpec.name}`
-  const targets = moduleSpec.hotReload.sync.map(pair => pair.target)
+  const commands = moduleSpec.hotReload.sync.map(pair => {
+    const target = dirname(pair.target)
+    const src = dirname(pair.source)
+    return `mkdir -p  cp -vr ${pair.target} ${mountPath}`
+  })
+  console.log(commands)
 
-  const copyCommand = `cp -r ${targets.join(" ")} /.garden/hot_reload`
+  const copyCommand = commands.join(" &&")
 
   const initContainer = {
     name: "garden-sync-init",
@@ -412,15 +418,15 @@ function configureHotReload(deployment, container, serviceSpec, moduleSpec, env,
     imagePullPolicy: "IfNotPresent",
     volumeMounts: [{
       name: syncVolumeName,
-      mountPath: "/.garden/hot_reload",
+      mountPath,
     }],
   }
 
-  const syncMounts = targets.map(target => {
+    console.log('synMount', basename(target))
     return {
       name: syncVolumeName,
       mountPath: target,
-      subPath: rsyncTargetPath(target),
+      subPath: basename(target),
     }
   })
 

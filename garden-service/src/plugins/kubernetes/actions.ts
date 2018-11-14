@@ -44,6 +44,7 @@ import { rsyncPortName } from "./service"
 import { ServiceStatus } from "../../types/service"
 import { ValidateModuleParams } from "../../types/plugin/params"
 import { waitForServices } from "./status"
+import { basename } from "path";
 
 export async function validate(params: ValidateModuleParams<ContainerModule>) {
   const config = await validateContainerModule(params)
@@ -160,7 +161,10 @@ export async function hotReload(
 
     await Bluebird.map(hotReloadConfig.sync, async ({ source, target }) => {
       const src = rsyncSourcePath(module, source)
-      const destination = `rsync://${hostname}:${rsyncNodePort}/volume/${rsyncTargetPath(target)}`
+      const destination = `rsync://${hostname}:${rsyncNodePort}/volume/${basename(target)}`
+      console.log("david is great")
+      console.log(src, destination)
+
       await execa("rsync", ["-vrptgo", src, destination])
     })
   })

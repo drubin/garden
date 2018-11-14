@@ -521,10 +521,21 @@ export async function validateContainerModule({ moduleConfig }: ValidateModulePa
   // validate hot reload configuration
   const hotReloadConfig = moduleConfig.spec.hotReload
   if (hotReloadConfig) {
+
     // Verify that sync targets are mutually disjoint - i.e. that no target is a subdirectory of
     // another target.
     const targets = hotReloadConfig.sync.map(syncSpec => syncSpec.target)
     const invalidTargetDescriptions: string[] = []
+    // For now ensure that src is a subpath of target
+    // This is because when we do a init sync we copy the target into the sync container
+    hotReloadConfig.sync.forEach(syncSpec => {
+      const src = syncSpec.source
+      const target = syncSpec.target
+      if (!target.endsWith(src)){
+        invalidTargetDescriptions.push(`${src} is a not subdirectory of ${target}.`)
+      }
+    })
+
     for (const t of targets) {
       for (const t2 of targets) {
         if (t2.startsWith(t) && t !== t2) {
