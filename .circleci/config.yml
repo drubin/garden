@@ -263,7 +263,8 @@ jobs:
             VERSION=$(cat package.json | jq -r .version)
             VERSION_LOCK=$(cat package-lock.json | jq -r .version)
             [ "$VERSION" == "$VERSION_LOCK" ] || (echo "package.json and package-lock.json contain different versions refusing to release"; exit 1)
-            [ "$VERSION" == "$CIRCLE_TAG" ] || (echo "package.json and CIRCLE_TAG contain different versions refusing to release"; exit 1)
+            # package.json contains 0.8 and our tagging convention is v0.8
+            [ "v$VERSION" == "$CIRCLE_TAG" ] || (echo "package.json and CIRCLE_TAG contain different versions refusing to release"; exit 1)
 
             # If version number is a pre-release set npm tag to --tag=beta so it is not installed when you install latest
             NPM_EXTRA=""
